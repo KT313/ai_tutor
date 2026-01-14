@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <title>AI 튜터와 함께하는 학습 가이드</title>
+    <style>
+        /* General body styling for better readability and aesthetics */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Cantarell, "Helvetica Neue", sans-serif;
+            margin: 20px;
+            background-color: #f8f9fa;
+            font-size: 10.5pt;
+            color: #343a40;
+            line-height: 1.6;
+        }
+
+        /* API Key Container Styling */
+        .api-key-container {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .api-key-container label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        #api-key-input {
+            flex-grow: 1;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            font-size: 10pt;
+        }
+
+        #save-api-key-btn {
+            background-color: #1c4e80;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s ease;
+        }
+        
+        #save-api-key-btn:hover {
+            background-color: #153a62;
+        }
+
+        #api-key-message {
+            color: #28a745;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        /* Main container for the card layout */
+        .container {
+            column-count: 3;
+            column-gap: 20px;
+        }
+
+        /* Individual card styling */
+        .card {
+            background-color: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 6px 10px rgba(0,0,0,0.07);
+            margin-bottom: 20px;
+            break-inside: avoid;
+            page-break-inside: avoid;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+        }
+
+        .card-content {
+            flex-grow: 1;
+        }
+
+        /* Card titles */
+        h3 {
+            font-size: 14pt;
+            color: #1c4e80;
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #1c4e80;
+            padding-bottom: 8px;
+        }
+
+        /* List styling */
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        /* List item styling with custom bullet point */
+        .card > .card-content > ul > li { 
+            padding-left: 20px; 
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .card > .card-content > ul > li::before {
+            content: '›';
+            position: absolute;
+            left: 0;
+            color: #1c4e80;
+            font-size: 18px;
+            top: 0px;
+            font-weight: bold;
+        }
+
+        /* Tooltip container styling */
+        .tooltip {
+            position: relative;
+            border-bottom: 2px dotted #007bff;
+            cursor: help;
+            font-weight: 600;
+            color: #0056b3;
+        }
+
+        /* The tooltip text itself (hidden by default) */
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 350px;
+            background-color: #343a40;
+            color: #f8f9fa;
+            text-align: left;
+            border-radius: 8px;
+            padding: 15px;
+            position: absolute;
+            z-index: 100;
+            bottom: 135%;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            font-size: 9.5pt;
+            font-weight: normal;
+            line-height: 1.5;
+            transform: translateY(10px);
+        }
+        
+        /* Positioning classes for tooltips to avoid screen overflow */
+        .tooltip .tooltip-text.tooltip-left {
+            left: 0;
+            margin-left: 0;
+        }
+
+        .tooltip .tooltip-text.tooltip-right {
+            left: auto;
+            right: 0;
+            margin-left: 0;
+        }
+
+        .tooltip:hover {
+            z-index: 999;
+        }
+
+        /* Show the tooltip on hover */
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Special styling for the "potentially relevant" card */
+        .card.extra-info h3 {
+            color: #28a745;
+            border-bottom-color: #28a745;
+        }
+        
+        .card.extra-info .tooltip {
+            border-bottom-color: #52b788;
+            color: #2d6a4f;
+        }
+        
+        .card.extra-info > .card-content > ul > li::before {
+            color: #28a745;
+        }
+
+        /* Card footer for the AI tutor button */
+        .card-footer {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        .tutor-button {
+            background-color: transparent;
+            color: #007bff;
+            border: 1px solid #007bff;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 9.5pt;
+            transition: all 0.3s ease;
+        }
+
+        .tutor-button:hover {
+            background-color: #007bff;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,123,255,0.2);
+        }
+
+        /* Modal styling */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 35vw;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h4 {
+            margin: 0;
+            font-size: 16pt;
+            color: #1c4e80;
+        }
+
+        .close-button {
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .close-button:hover {
+            color: #333;
+        }
+
+        #modal-body {
+            max-height: 80vh; 
+            min-height: 65vh;
+            padding-right: 15px;
+        }
+        
+        #tutor-question-container {
+            background-color: #e9f7ff;
+            border-left: 4px solid #007bff;
+            max-height: 55vh;
+            overflow-y: auto;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        #user-answer-input {
+            width: 100%;
+            box-sizing: border-box;
+            height: 120px;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            margin-bottom: 15px;
+            font-family: inherit;
+            font-size: 10pt;
+            resize: vertical;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0px;
+            justify-content: flex-end;
+        }
+
+        .modal-actions button {
+            padding: 0px 10px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: small;
+            transition: background-color 0.2s ease;
+        }
+
+        #submit-answer-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        #submit-answer-btn:hover {
+            background-color: #218838;
+        }
+        
+        #new-question-btn {
+            background-color: #007bff;
+            color: white;
+        }
+        #new-question-btn:hover {
+            background-color: #0056b3;
+        }
+
+        #clear-history-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        #clear-history-btn:hover {
+            background-color: #c82333;
+        }
+
+        #remove-last-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+        #remove-last-btn:hover {
+            background-color: #5a6268;
+        }
+
+        #api-response {
+            display: none; /* No longer used but kept for compatibility */
+        }
+
+        /* Conversation history styling */
+        #conversation-history {
+            margin-top: 20px;
+            max-height: 55vh;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #f8f9fa;
+        }
+
+        .conversation-message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .conversation-message.question {
+            background-color: #e9f7ff;
+            border-left: 4px solid #007bff;
+        }
+
+        .conversation-message.answer {
+            background-color: #e8f5e9;
+            border-left: 4px solid #28a745;
+        }
+
+        .conversation-message.user {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+
+        .conversation-message.tutor {
+            background-color: #ffffff;
+            border-left: 4px solid #6c757d;
+        }
+
+        .message-label {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+
+        #follow-up-container {
+            margin-top: 15px;
+            display: none;
+        }
+
+        #follow-up-input {
+            width: 100%;
+            box-sizing: border-box;
+            height: 80px;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            font-family: inherit;
+            font-size: 10pt;
+            resize: vertical;
+        }
+
+        #send-follow-up-btn {
+            background-color: #17a2b8;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s ease;
+        }
+
+        #send-follow-up-btn:hover {
+            background-color: #138496;
+        }
+
+        /* Loader styling */
+        #loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1c4e80;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Error message styling */
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        /* Responsive design for smaller screens */
+        @media (max-width: 1024px) {
+            .container {
+                column-count: 2;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                column-count: 1;
+            }
+            body {
+                margin: 15px;
+            }
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #1c4e80;
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .toggle-label {
+            font-weight: 600;
+            color: #495057;
+            cursor: pointer;
+            user-select: none;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="api-key-container">
+    <label for="api-key-input">Gemini API 키:</label>
+    <input type="password" id="api-key-input" placeholder="여기에 API 키를 입력하세요...">
+    <button id="save-api-key-btn">저장</button>
+    <span id="api-key-message"></span>
+
+    <div class="toggle-container">
+        <label class="toggle-switch">
+            <input type="checkbox" id="optional-instruction-toggle">
+            <span class="toggle-slider"></span>
+        </label>
+        <label for="optional-instruction-toggle" class="toggle-label">한 번에 질문하기</label>
+    </div>
+</div>
+
+<div class="container" id="cards-container">
+    <!-- Cards will be dynamically loaded here -->
+</div>
+
+<!-- Modal for AI Tutor -->
+<div id="tutor-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4 id="modal-topic-title">AI 튜터</h4>
+            <span class="close-button">&times;</span>
+        </div>
+        <div id="modal-body">
+            <div id="loader"></div>
+            <div id="tutor-question-container" style="display: none;"></div>
+            <textarea id="user-answer-input" placeholder="답변을 입력하세요..." style="display: none;"></textarea>
+            <div class="modal-actions">
+                <button id="submit-answer-btn" style="display: none;">답변 전송</button>
+                <button id="new-question-btn" style="display: none;">새로운 질문 받기</button>
+                <button id="remove-last-btn" style="display: none;">마지막 대화 삭제</button>
+                <button id="clear-history-btn" style="display: none;">기록 삭제</button>
+            </div>
+            <div id="conversation-history" style="display: none;"></div>
+            <div id="follow-up-container">
+                <textarea id="follow-up-input" placeholder="Stellen Sie eine Folgefrage oder bitten Sie um weitere Erklärungen..."></textarea>
+                <button id="send-follow-up-btn">질문 전송</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+/*
+Content data - replace this with your own content following the same structure.
+
+The following is only an example of what the structure should look like, do not replace this! The part where you want to insert your CONTENT_DATA is below this!
+
+const CONTENT_DATA = [
+  {
+    "title": {
+      "string": "Einführung in die Betriebswirtschaftslehre (BWL)",
+      "tooltip": "Grundlagen, zentrale Begriffe und historische Einordnung der BWL.",
+      "verbose_tutor_info": "Diese Karte behandelt die Definition, die wissenschaftliche Einordnung und die grundlegenden Konzepte der Betriebswirtschaftslehre. Der Tutor sollte die Abgrenzung zur Volkswirtschaftslehre (VWL) und die Bedeutung des Wirtschaftlichkeitsprinzips prüfen. Die Kontrollfragen aus Kapitel 1, wie die Unterscheidung von Gütern oder die Abgrenzung zur VWL, sollten hier beantwortet werden können."
+    },
+    "content": [
+      [
+        {
+          "string": "Definition BWL:",
+          "tooltip": "Die BWL ist die Lehre vom Wirtschaften in Betrieben, also in Wirtschaftseinheiten, die Güter zur Deckung fremder Bedarfe produzieren.",
+          "verbose_tutor_info": "Die Betriebswirtschaftslehre (BWL) ist eine Wissenschaftsdisziplin, die sich mit den wirtschaftlichen Aspekten von Betrieben (Unternehmen) befasst. Sie untersucht, wie Betriebe Güter produzieren und absetzen, um fremde Bedarfe zu decken. Ihr 'Geburtsjahr' wird auf 1898 datiert. Frage nach dem Erkenntnisobjekt der BWL."
+        },
+        ...
+      ]
+    ]
+  },
+  {
+    "title": {
+      "string": "Unternehmensziele und Kennzahlen",
+      "tooltip": "Hierarchie, Arten und Messung von Unternehmenszielen.",
+      "verbose_tutor_info": "Diese Karte behandelt die verschiedenen Arten von Zielen, ihre Beziehungen zueinander und wie ihr Erreichungsgrad durch Kennzahlen gemessen wird. Der Tutor sollte die Zielhierarchie und die Berechnung der wichtigsten Rentabilitätskennzahlen prüfen. Die Aufgaben aus Kapitel 1 sind hier verortet."
+    },
+    "content": [
+      [
+        {
+          "string": "Zieltypen:",
+          "tooltip": "Unterscheidung von Zielen nach ihrem Bezug. Sachziele (Was?) und Formalziele (Wie erfolgreich?).",
+          "verbose_tutor_info": "Im Rahmen der betriebswirtschaftlichen Zielkonzeption werden Sach- und Formalziele unterschieden. Sachziele beziehen sich auf die konkrete Leistung des Unternehmens (z.B. welche Produkte hergestellt werden). Formalziele (Erfolgsziele) beschreiben, wie erfolgreich diese Leistungen erbracht werden sollen (z.B. mit welchem Gewinn). Kontrollfrage: Nennen und erläutern Sie typische Sachziele und Formalziele."
+        },
+        {
+          "string": "Sachziele",
+          "tooltip": "Beziehen sich auf die konkrete Leistungserstellung (Leistungsbezug). Beispiele: Art, Menge, Qualität der Produkte, Finanz-, Führungs-, soziale und ökologische Ziele.",
+          "verbose_tutor_info": "Sachziele definieren das Betätigungsfeld eines Unternehmens. Man unterscheidet Leistungsziele, Finanzziele, Führungs- und Organisationsziele sowie soziale und ökologische Ziele."
+        },
+      ]
+    ]
+  }
+]
+
+*/
+
+// INSERT YOUR CONTENT_DATA BELOW THIS!
+const CONTENT_DATA = [
+  
+]
+
+const systemPromptInfo = `당신은 경험이 풍부하고 친절한 튜터입니다. 학생이 시험 준비를 하는 것을 도와주세요.
+학생은 곧 시험을 치르게 되며, 반드시 합격해야 합니다. 당신의 목표는 학생이 시험에 확실히 합격할 수 있도록 필요한 모든 내용을 가능한 한 빨리 가르치는 것입니다.
+이를 위해 학생에게 예상 시험 문제를 출제하세요.
+이것은 당신에 대한 평가이기도 합니다. 당신이 학생을 얼마나 잘 준비시키는지에 따라 당신의 지능과 능력이 평가될 것입니다.
+정보: **이것은 __텍스트__입니다**와 같이 중첩된 텍스트 서식을 사용하지 마세요. 학생에게 올바르게 표시되지 않습니다. 대신 **이것은** __텍스트__입니다 와 같이 사용하세요.`;
+
+const optional_instruction = `모든 내용에 대한 질문을 한 번에 출제해 주세요.`;
+
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    const container = document.getElementById('cards-container');
+    
+    // Load content from embedded data
+    function loadContent() {
+        try {
+            renderCards(CONTENT_DATA);
+            setupTooltips();
+            setupTutorButtons();
+        } catch (error) {
+            console.error('Error loading content:', error);
+            container.innerHTML = '<div class="error-message">콘텐츠를 불러오는 중 오류가 발생했습니다.</div>';
+        }
+    }
+
+    // Render cards from JSON data
+    function renderCards(cardData) {
+        cardData.forEach(card => {
+            const cardElement = createCardElement(card);
+            container.appendChild(cardElement);
+        });
+    }
+
+    // Create a single card element
+    function createCardElement(cardData) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        if (cardData.title.extra_class) {
+            card.className += ' ' + cardData.title.extra_class;
+        }
+
+        const cardContent = document.createElement('div');
+        cardContent.className = 'card-content';
+
+        // Create title
+        const title = document.createElement('h3');
+        title.textContent = cardData.title.string;
+        cardContent.appendChild(title);
+
+        // Create content list
+        const ul = document.createElement('ul');
+        cardData.content.forEach(contentRow => {
+            const li = document.createElement('li');
+            
+            contentRow.forEach((item, index) => {
+                if (index > 0) {
+                    li.appendChild(document.createTextNode(' '));
+                }
+                
+                if (item.tooltip) {
+                    const tooltipSpan = document.createElement('span');
+                    tooltipSpan.className = 'tooltip';
+                    tooltipSpan.innerHTML = item.string;
+                    
+                    const tooltipText = document.createElement('span');
+                    tooltipText.className = 'tooltip-text';
+                    tooltipText.innerHTML = item.tooltip;
+                    
+                    tooltipSpan.appendChild(tooltipText);
+                    li.appendChild(tooltipSpan);
+                } else {
+                    li.appendChild(document.createTextNode(item.string));
+                }
+            });
+            
+            ul.appendChild(li);
+        });
+        cardContent.appendChild(ul);
+
+        // Store verbose tutor info and visible content on the card element
+        card.dataset.tutorTitle = cardData.title.string;
+        card.dataset.tutorTitleVerbose = cardData.title.verbose_tutor_info || '';
+        
+        // Build context string including all tooltips and verbose info
+        let tutorContext = `Thema: ${cardData.title.string}\n`;
+        if (cardData.title.verbose_tutor_info) {
+            tutorContext += `\nÜberblick: ${cardData.title.verbose_tutor_info}\n`;
+        }
+        tutorContext += '\nRelevante Stichpunkte:\n';
+        
+        cardData.content.forEach(contentRow => {
+            contentRow.forEach((item, index) => {
+                if (item.tooltip) {
+                    tutorContext += `- ${item.string}: ${item.tooltip}`;
+                    if (item.verbose_tutor_info) {
+                        tutorContext += ` [Zusatzinfo für Tutor: ${item.verbose_tutor_info}]`;
+                    }
+                    tutorContext += '\n';
+                }
+            });
+        });
+        
+        card.dataset.tutorContext = tutorContext;
+
+        // Create card footer
+        const cardFooter = document.createElement('div');
+        cardFooter.className = 'card-footer';
+        const tutorButton = document.createElement('button');
+        tutorButton.className = 'tutor-button';
+        tutorButton.textContent = '✨ 튜터에게 질문하기';
+        cardFooter.appendChild(tutorButton);
+
+        card.appendChild(cardContent);
+        card.appendChild(cardFooter);
+
+        return card;
+    }
+
+    // Setup tooltips positioning
+    function setupTooltips() {
+        const tooltips = document.querySelectorAll('.tooltip');
+        tooltips.forEach(tooltip => {
+            tooltip.addEventListener('mouseenter', function () {
+                const tooltipText = this.querySelector('.tooltip-text');
+                if (!tooltipText) return;
+
+                tooltipText.style.visibility = 'hidden';
+                tooltipText.style.display = 'block';
+                tooltipText.classList.remove('tooltip-left', 'tooltip-right');
+                const rect = this.getBoundingClientRect(); 
+                const tooltipRect = tooltipText.getBoundingClientRect(); 
+                const viewportWidth = window.innerWidth;
+                const centeredLeft = rect.left + (rect.width / 2) - (tooltipRect.width);
+                const centeredRight = rect.right + (rect.width / 2) - (tooltipRect.width);
+
+                tooltipText.classList.add('tooltip-left');
+
+                if ((viewportWidth - centeredRight) < (tooltipRect.width + (rect.width / 2) + 200)) { 
+                    tooltipText.classList.add('tooltip-right');
+                }
+                
+                tooltipText.style.display = '';
+                tooltipText.style.visibility = '';
+            });
+        });
+    }
+
+    // --- AI Tutor Modal Logic ---
+    const modal = document.getElementById('tutor-modal');
+    const modalTopicTitle = document.getElementById('modal-topic-title');
+    const closeModalBtn = document.querySelector('.close-button');
+    const submitAnswerBtn = document.getElementById('submit-answer-btn');
+    const newQuestionBtn = document.getElementById('new-question-btn');
+    const clearHistoryBtn = document.getElementById('clear-history-btn');
+    const userAnswerInput = document.getElementById('user-answer-input');
+    const questionContainer = document.getElementById('tutor-question-container');
+    const loader = document.getElementById('loader');
+    const conversationHistory = document.getElementById('conversation-history');
+    const followUpContainer = document.getElementById('follow-up-container');
+    const followUpInput = document.getElementById('follow-up-input');
+    const sendFollowUpBtn = document.getElementById('send-follow-up-btn');
+    const removeLastBtn = document.getElementById('remove-last-btn');
+    
+    // --- API Key Management ---
+    const apiKeyInput = document.getElementById('api-key-input');
+    const saveApiKeyBtn = document.getElementById('save-api-key-btn');
+    const apiKeyMessage = document.getElementById('api-key-message');
+
+    const optionalInstructionToggle = document.getElementById('optional-instruction-toggle');
+
+    // Load saved toggle state from localStorage
+    const loadToggleState = () => {
+        const savedState = localStorage.getItem('optionalInstructionEnabled');
+        if (savedState === 'true') {
+            optionalInstructionToggle.checked = true;
+        }
+    };
+
+    // Save toggle state to localStorage
+    const saveToggleState = () => {
+        localStorage.setItem('optionalInstructionEnabled', optionalInstructionToggle.checked);
+    };
+
+    // Load saved key from localStorage
+    const loadApiKey = () => {
+        const savedKey = localStorage.getItem('geminiApiKey');
+        if (savedKey) {
+            apiKeyInput.value = savedKey;
+        }
+    };
+
+    optionalInstructionToggle.addEventListener('change', saveToggleState);
+
+    // Save key to localStorage and show a message
+    const saveApiKey = () => {
+        const key = apiKeyInput.value.trim();
+        if (key) {
+            localStorage.setItem('geminiApiKey', key);
+            apiKeyMessage.textContent = 'API 키가 저장되었습니다!';
+        } else {
+            localStorage.removeItem('geminiApiKey');
+            apiKeyMessage.textContent = '저장된 API 키가 삭제되었습니다.';
+        }
+        apiKeyMessage.style.opacity = '1';
+        setTimeout(() => {
+            apiKeyMessage.style.opacity = '0';
+        }, 6000);
+    };
+
+    saveApiKeyBtn.addEventListener('click', saveApiKey);
+    loadApiKey();
+    loadToggleState();
+
+    const userProvidedApiKey = apiKeyInput.value.trim();
+    const apiKey = userProvidedApiKey || ""; // Prioritize user key, fallback to environment placeholder
+
+    // Helper function to add message to chat history maintaining turn-based structure
+    const addToChatHistory = (role, text) => {
+        if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === role) {
+            // Append to the last message if it's from the same role
+            chatHistory[chatHistory.length - 1].parts[0].text += '\n\n' + text;
+        } else {
+            // Add as new message
+            chatHistory.push({
+                role: role,
+                parts: [{ text: text }]
+            });
+        }
+    };
+
+    // Function to remove the last message from history
+    const removeLastMessage = () => {
+        // Do not allow removing the initial system prompt
+        if (chatHistory.length <= 1) {
+            return;
+        }
+
+        // Remove the last entry from the history array
+        chatHistory.pop();
+
+        // Determine the new state of the conversation
+        const lastMessage = chatHistory[chatHistory.length - 1];
+
+        if (lastMessage.role === 'model' && chatHistory.length === 2) {
+            // The history now ends with a model's question, so we are awaiting an answer
+            modalState.isAwaitingAnswer = true;
+            modalState.currentQuestion = lastMessage.parts[0].text;
+        } else {
+            // The history now ends on a user's answer; nothing to evaluate yet
+            modalState.isAwaitingAnswer = false;
+        }
+
+        // Save the modified history and re-render the entire modal UI
+        saveChatHistory(currentTopic);
+        restoreConversationUI();
+    };
+
+    // Functions to save and load chat history and state for each card
+    const saveChatHistory = (topic) => {
+        const key = `tutorHistory_${topic.replace(/\s+/g, '_')}`;
+        localStorage.setItem(key, JSON.stringify({
+            chatHistory: chatHistory,
+            modalState: modalState
+        }));
+    };
+
+    const loadChatHistory = (topic) => {
+        const key = `tutorHistory_${topic.replace(/\s+/g, '_')}`;
+        const saved = localStorage.getItem(key);
+        if (saved) {
+            const data = JSON.parse(saved);
+            return data;
+        }
+        return null;
+    };
+
+    const clearChatHistory = (topic) => {
+        const key = `tutorHistory_${topic.replace(/\s+/g, '_')}`;
+        localStorage.removeItem(key);
+        // Also clear unsent input
+        const inputKey = `tutorInput_${topic.replace(/\s+/g, '_')}`;
+        localStorage.removeItem(inputKey);
+    };
+
+    // Save user input as they type
+    const saveUserInput = (topic, inputValue) => {
+        const key = `tutorInput_${topic.replace(/\s+/g, '_')}`;
+        localStorage.setItem(key, inputValue);
+    };
+
+    const loadUserInput = (topic) => {
+        const key = `tutorInput_${topic.replace(/\s+/g, '_')}`;
+        return localStorage.getItem(key) || '';
+    };
+
+    // Function to open the modal and start or resume a session
+    const startTutorSession = (topic, context) => {
+        currentTopic = topic;
+        currentContext = context;
+        modalTopicTitle.textContent = `Tutor: ${topic}`;
+        modal.classList.add('visible');
+        
+        // Load saved chat history if it exists
+        const savedData = loadChatHistory(topic);
+        if (savedData && savedData.chatHistory.length > 0) {
+            // FIX: Explicitly hide the loader when restoring from history
+            // because no new network request is being made.
+            loader.style.display = 'none';
+
+            chatHistory = savedData.chatHistory;
+            modalState = savedData.modalState;
+            restoreConversationUI();
+            
+            // Restore unsent input if any
+            if (modalState.isAwaitingAnswer) {
+                userAnswerInput.value = loadUserInput(topic);
+            }
+        } else {
+            // This is a new session, so get a new question from the API
+            // (which will correctly handle showing and hiding the loader).
+            resetModalState();
+            chatHistory = [];
+            callGeminiForQuestion();
+        }
+    };
+
+        // Restore conversation UI from saved history
+    const restoreConversationUI = () => {
+        // 1. Reset all dynamic UI elements to a clean slate
+        conversationHistory.innerHTML = '';
+        questionContainer.style.display = 'none';
+        userAnswerInput.style.display = 'none';
+        userAnswerInput.value = ''; // Also clear the text from the input
+        submitAnswerBtn.style.display = 'none';
+        followUpContainer.style.display = 'none';
+        newQuestionBtn.style.display = 'none';
+        removeLastBtn.style.display = 'none';
+        clearHistoryBtn.style.display = 'none';
+
+        // 2. Rebuild the conversation display from the history array
+        chatHistory.forEach((msg, i) => {
+            if (i === 0) return; // Always skip the initial system prompt
+
+            const isLastMessage = i === chatHistory.length - 1;
+
+            // Check if this message is the current, active question
+            if (isLastMessage && modalState.isAwaitingAnswer && msg.role === 'model') {
+                // If so, display it in the main question container
+                questionContainer.innerHTML = formatResponse(msg.parts[0].text);
+                questionContainer.style.display = 'block';
+                // And load any previously typed (but unsent) text
+                userAnswerInput.value = loadUserInput(currentTopic);
+            } else {
+                // Otherwise, it's a past message that belongs in the history log
+                if (msg.role === 'user') {
+                    addToConversation('나의 답변', msg.parts[0].text, 'user');
+                } else { // msg.role === 'model'
+                    // Determine if it was a question or a tutor's evaluation
+                    const previousMsg = chatHistory[i - 1];
+                    if (previousMsg.role === 'user' && i > 1) {
+                        addToConversation('튜터의 피드백', msg.parts[0].text, 'tutor');
+                    } else {
+                        addToConversation('질문', msg.parts[0].text, 'question');
+                    }
+                }
+            }
+        });
+
+        // 3. Set the final UI state (buttons and inputs)
+        if (modalState.isAwaitingAnswer) {
+            userAnswerInput.style.display = 'block';
+            submitAnswerBtn.style.display = 'inline-block';
+        } else if (chatHistory.length > 1) {
+            // No active question, show options for the next step
+            followUpContainer.style.display = 'block';
+            newQuestionBtn.style.display = 'inline-block';
+            removeLastBtn.style.display = 'inline-block';
+        }
+
+        // Always show the clear history button if there's any history
+        if (chatHistory.length > 1) {
+            clearHistoryBtn.style.display = 'inline-block';
+        }
+    };
+
+    // Resets modal to initial state for a new question
+    const resetModalState = () => {
+        conversationHistory.innerHTML = '';
+        conversationHistory.style.display = 'none';
+        questionContainer.innerHTML = '';
+        userAnswerInput.value = '';
+        followUpInput.value = '';
+        questionContainer.style.display = 'none';
+        userAnswerInput.style.display = 'none';
+        submitAnswerBtn.style.display = 'none';
+        newQuestionBtn.style.display = 'none';
+        removeLastBtn.style.display = 'none';
+        clearHistoryBtn.style.display = 'none';
+        followUpContainer.style.display = 'none';
+        modalState = {
+            isAwaitingAnswer: false,
+            currentQuestion: ''
+        };
+    };
+    
+    // Function to close the modal
+    const closeModal = () => {
+        modal.classList.remove('visible');
+        // Save current state before closing
+        saveChatHistory(currentTopic);
+    };
+
+    // Function to add message to conversation history
+    const addToConversation = (label, content, className) => {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `conversation-message ${className}`;
+        
+        const labelDiv = document.createElement('div');
+        labelDiv.className = 'message-label';
+        labelDiv.textContent = label;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.innerHTML = formatResponse(content);
+        
+        messageDiv.appendChild(labelDiv);
+        messageDiv.appendChild(contentDiv);
+        
+        conversationHistory.appendChild(messageDiv);
+        conversationHistory.style.display = 'block';
+        conversationHistory.scrollTop = conversationHistory.scrollHeight;
+    };
+
+    // Setup tutor buttons
+    function setupTutorButtons() {
+        const tutorButtons = document.querySelectorAll('.tutor-button');
+        tutorButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const card = button.closest('.card');
+                const topic = card.dataset.tutorTitle;
+                const context = card.dataset.tutorContext;
+                startTutorSession(topic, context);
+            });
+        });
+    }
+
+    // Event listeners for closing the modal
+    closeModalBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    // Function to format the API response
+    const formatResponse = (text) => {
+        if (!text) return '';
+        
+        // Use the marked.js library to correctly parse full Markdown,
+        // including tables, code blocks, and escaped characters.
+        // The 'gfm: true' option enables GitHub Flavored Markdown for tables.
+        // The 'breaks: true' option renders newlines as <br> tags, which is
+        // good for chat-style formatting.
+        return marked.parse(text, { gfm: true, breaks: true });
+    };
+    
+    // Generic function to call Gemini API with chat history
+    /*
+    const callGemini = async () => {
+        loader.style.display = 'block';
+        
+        
+
+        const payload = { contents: chatHistory };
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+        console.log("payload for gemini: ", payload);
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Connection': 'keep-alive',
+                    'Keep-Alive': 'timeout=300'
+                },
+                body: JSON.stringify(payload),
+                keepalive: true
+            });
+
+            if (!response.ok) {
+                 const errorBody = await response.text();
+                 console.error("API Error Response:", errorBody);
+                 if(response.status === 400){
+                     return 'API-Schlüssel ungültig oder fehlt. Bitte überprüfen Sie Ihren Schlüssel im Eingabefeld oben.';
+                 }
+                 throw new Error(`API-Fehler: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                return result.candidates[0].content.parts[0].text;
+            } else {
+                console.log(result.candidates);
+                return 'Entschuldigung, es konnte keine Antwort generiert werden. Die API-Antwort war unerwartet formatiert.';
+            }
+        } catch (error) {
+            console.error('Error calling Gemini API:', error);
+            return `Ein Fehler ist aufgetreten: ${error.message}. Bitte versuchen Sie es später erneut.`;
+        } finally {
+            loader.style.display = 'none';
+        }
+    };
+    */
+
+    // Robust Streaming Function (Adapted for bwl.html)
+    const callGemini = async () => {
+        loader.style.display = 'block';
+        
+        const userProvidedApiKey = apiKeyInput.value.trim();
+        const apiKey = userProvidedApiKey || ""; 
+
+        // 1. Use the global chatHistory directly (no prompt argument needed)
+        const payload = { contents: chatHistory };
+        
+        console.log("Payload for Gemini stream:", payload);
+
+        // Note: Switched to 'streamGenerateContent'
+        const modelName = 'gemini-3-flash-preview'; 
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:streamGenerateContent?key=${apiKey}`;
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                 const errorBody = await response.text();
+                 console.error("API Error Response:", errorBody);
+                 if(response.status === 400){
+                     return 'API 키가 유효하지 않거나 없습니다.';
+                 }
+                 throw new Error(`API 오류: ${response.status} ${response.statusText}`);
+            }
+
+            // 2. Prepare for streaming
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let buffer = ""; 
+            let fullText = "";
+
+            loader.style.display = 'none';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                buffer += decoder.decode(value, { stream: true });
+
+                // 3. Robust JSON Parsing (Brace Counting)
+                let braceCount = 0;
+                let inString = false;
+                let isEscaped = false;
+                let startIndex = -1;
+
+                for (let i = 0; i < buffer.length; i++) {
+                    const char = buffer[i];
+
+                    if (inString) {
+                        if (char === '\\' && !isEscaped) isEscaped = true;
+                        else if (char === '"' && !isEscaped) inString = false;
+                        else isEscaped = false;
+                        continue;
+                    }
+
+                    if (char === '"') inString = true;
+                    else if (char === '{') {
+                        if (braceCount === 0) startIndex = i;
+                        braceCount++;
+                    } else if (char === '}') {
+                        braceCount--;
+                        if (braceCount === 0 && startIndex !== -1) {
+                            const jsonStr = buffer.substring(startIndex, i + 1);
+                            
+                            try {
+                                const json = JSON.parse(jsonStr);
+                                if (json.candidates && json.candidates[0].content && json.candidates[0].content.parts) {
+                                    const text = json.candidates[0].content.parts[0].text;
+                                    if (text) fullText += text;
+                                }
+                                
+                                // Remove parsed object from buffer and restart loop
+                                buffer = buffer.substring(i + 1);
+                                i = -1; 
+                                startIndex = -1;
+                            } catch (e) {
+                                // Incomplete JSON, continue
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return fullText;
+
+        } catch (error) {
+            console.error('Error calling Gemini API:', error);
+            return `오류가 발생했습니다: ${error.message}.`;
+        } finally {
+            loader.style.display = 'none';
+        }
+    };
+
+    // Function to get a question from the API
+    const callGeminiForQuestion = async () => {
+        resetModalState();
+        
+        // Add system prompt if this is the first question
+        if (chatHistory.length === 0) {
+            let fullSystemPrompt = `${systemPromptInfo}
+            주제 문맥: ${currentContext}
+            
+            당신의 첫 번째 임무는 "${currentTopic}" 주제에 대한 간결한 질문이나 과제를 만드는 것입니다.
+질문은 명확하게 구조화되어야 하며(내용이 많을 경우 하위 과제로 나누기), 난이도는 쉬움에서 중간 정도여야 합니다.
+과제/질문에 대한 답변이 완료되고 남은 과제/질문이 더 있다면, 즉시 다음 질문을 하세요. 같은 주제에 대한 짧은 질문이 여러 개일 경우 한 번에 여러 개를 질문할 수도 있습니다.`;
+
+            if (optionalInstructionToggle.checked) {
+                fullSystemPrompt += `\n` + optional_instruction;
+            }
+            
+            addToChatHistory("user", fullSystemPrompt);
+        } else {
+            // Request a new question
+            addToChatHistory("user", "이 주제에 대해 새로운 질문이나 과제를 내주세요.");
+        }
+        
+        const question = await callGemini();
+        
+        // Add the model's response to chat history
+        addToChatHistory("model", question);
+        
+        modalState.isAwaitingAnswer = true;
+        modalState.currentQuestion = question;
+        
+        // FIX: Use the formatResponse function here
+        questionContainer.innerHTML = formatResponse(question);
+        questionContainer.style.display = 'block';
+        userAnswerInput.style.display = 'block';
+        submitAnswerBtn.style.display = 'inline-block';
+        
+        saveChatHistory(currentTopic);
+    };
+
+    // Function to get an evaluation from the API
+    const callGeminiForEvaluation = async () => {
+        const userAnswer = userAnswerInput.value;
+        if (!userAnswer.trim()) {
+            alert('답변을 입력해 주세요.');
+            return;
+        }
+
+        // Add user's answer to chat history
+        addToChatHistory("user", userAnswer);
+
+        // This prompt is now treated as a temporary instruction
+        const evaluationPrompt = `위의 학생 답변을 평가해 주세요. 
+        건설적이고 친절하게 답해 주세요. 
+        각 하위 과제에 대해 다음과 같이 수정을 진행하세요:
+        1. 학생의 답변을 반복하되, 문제가 있는 부분을 표시하세요.
+        학생의 답변이 완벽하지 않은 경우, 2단계 + 3단계를 수행하세요:
+        2. 과제를 올바르게 수행하기 위해 보완/수정된 학생의 답변 예시를 보여주세요.
+        3. 보완/변경 사항에 대해 설명해 주세요.
+        답변에 추가 정보가 관련이 있는 경우(예: 4개 용어 중 2개에 대한 설명을 요구한 경우), 4단계를 수행하세요:
+        4. 추가 정보를 간략하게 나열하세요 (예: 가능했던 나머지 설명들을 보여주기).
+        빠르고 쉽게 이해할 수 있는 설명을 선호합니다.`;
+        
+        userAnswerInput.style.display = 'none';
+        submitAnswerBtn.style.display = 'none';
+        questionContainer.style.display = 'none';
+        
+        // --- IMPROVEMENT START ---
+        // Temporarily add the evaluation prompt to the last message for the API call
+        const lastMessage = chatHistory[chatHistory.length - 1];
+        const originalUserText = lastMessage.parts[0].text;
+        lastMessage.parts[0].text += '\n\n' + evaluationPrompt;
+
+        const evaluation = await callGemini();
+
+        // Restore the last message to its original state (just the user's answer)
+        lastMessage.parts[0].text = originalUserText;
+        // --- IMPROVEMENT END ---
+
+        // Add the model's response to the history
+        addToChatHistory("model", evaluation);
+        
+        modalState.isAwaitingAnswer = false;
+        
+        // Add Q&A to conversation history UI
+        addToConversation('질문', modalState.currentQuestion, 'question');
+        addToConversation('나의 답변', userAnswer, 'user');
+        addToConversation('튜터의 피드백', evaluation, 'tutor');
+        
+        // Clear saved input
+        saveUserInput(currentTopic, '');
+        
+        // Show follow-up options
+        followUpContainer.style.display = 'block';
+        newQuestionBtn.style.display = 'inline-block';
+        removeLastBtn.style.display = 'inline-block';
+        clearHistoryBtn.style.display = 'inline-block';
+        newQuestionBtn.textContent = '새로운 질문 받기';
+        
+        saveChatHistory(currentTopic);
+    };
+
+    // Function to handle follow-up questions
+    const sendFollowUp = async () => {
+        const followUpQuestion = followUpInput.value.trim();
+        if (!followUpQuestion) {
+            alert('질문을 입력해 주세요.');
+            return;
+        }
+
+        // Add follow-up question to chat history
+        addToChatHistory("user", followUpQuestion);
+        
+        // Clear input
+        followUpInput.value = '';
+        
+        const response = await callGemini();
+        
+        // Add model's response to chat history
+        addToChatHistory("model", response);
+        
+        // Add to conversation UI
+        addToConversation('나의 질문', followUpQuestion, 'user');
+        addToConversation('튜터의 답변', response, 'tutor');
+        
+        saveChatHistory(currentTopic);
+    };
+
+    // Event listener for saving user input as they type
+    userAnswerInput.addEventListener('input', () => {
+        saveUserInput(currentTopic, userAnswerInput.value);
+    });
+
+    // Event listener for submitting an answer
+    submitAnswerBtn.addEventListener('click', callGeminiForEvaluation);
+    
+    // Event listener for getting a new question
+    newQuestionBtn.addEventListener('click', () => {
+        resetModalState();
+        // Keep chat history but start a new question
+        callGeminiForQuestion();
+    });
+
+    // Event listener for clearing history
+    clearHistoryBtn.addEventListener('click', () => {
+        if (confirm('정말로 이 주제의 모든 대화 기록을 삭제하시겠습니까?')) {
+            clearChatHistory(currentTopic);
+            chatHistory = [];
+            resetModalState();
+            callGeminiForQuestion();
+        }
+    });
+
+    // Event listener for sending follow-up questions
+    sendFollowUpBtn.addEventListener('click', sendFollowUp);
+    removeLastBtn.addEventListener('click', removeLastMessage);
+
+    // Load content on page load
+    loadContent();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,162 @@
+Die Dateien im Anhang sind die Folien für einen Universitätskurs.
+Bitte nutze die Dokumente im Anhang (PDFs mit den Inhalten der Vorlesungen) und schreibe für jeden klausurrelevanten Inhalt die relevanten Informationen auf.
+Das Format für die Informationen soll folgenderweise angepasst sein, damit es in einer Website mit einem KI-Tutoren geübt werden kann:
+
+# Anleitung zur Erstellung von KI-Tutor-Lerninhalten
+
+## 1\. Zielsetzung
+
+Erstelle aus den bereitgestellten Dokumenten (z. B. ein Fragenkatalog und Vorlesungsfolien) eine einzelne JavaScript-Variable namens `CONTENT_DATA`. Diese Variable dient als strukturierte Wissensbasis für einen KI-gestützten Lern-Tutor.
+
+## 2\. Grundprinzipien der Strukturierung
+
+### A. Semantische Gruppierung statt linearer Abfolge
+
+Die wichtigste Aufgabe ist es, die Inhalte aus den Dokumenten in wenige, thematisch zusammenhängende **Lernkarten** zu gruppieren. Erstelle **nicht** eine separate Karte für jede einzelne Frage aus dem Fragenkatalog. Fasse stattdessen logisch verwandte Themen zu einer übergeordneten Karte zusammen.
+
+  * **Beispiel für gute Kartentitel:** "Grundlagen der Parallelverarbeitung", "Prozesse, Threads & Synchronisation", "Schwarmintelligenz-Algorithmen".
+  * **Beispiel für eine schlechte Struktur:** Eine Karte für "Was ist ein Prozess?", eine weitere für "Was ist ein Thread?", eine dritte für "Was ist der Unterschied?". Fasse diese stattdessen in der Karte "Prozesse, Threads & Synchronisation" zusammen.
+
+### B. Klare Trennung von Stichwort, Erklärung und Tutor-Wissen
+
+Jeder einzelne Inhaltspunkt sollte nach folgendem Prinzip aufgebaut sein, um eine klare und interaktive Lernoberfläche zu schaffen:
+
+1.  **`string` (Das Stichwort):** Dies ist der sichtbare Text. Er muss **extrem prägnant** sein – idealerweise ein bis drei Wörter. Er dient als Anker oder Label für das Konzept.
+
+      * *Gut:* `"Prozess"`, `"Amdahlsches Gesetz"`, `"Vorteile"`
+      * *Schlecht:* `"Ein Prozess ist ein Programm in Ausführung mit eigenem, isoliertem Speicherbereich."`
+
+2.  **`tooltip` (Die Erklärung):** Dies ist die "erste Ebene" der Information, die bei Maus-Hover erscheint. Hier stehen die **kurze Definition, die wichtigste Formel oder eine prägnante Beispiel-Liste**. Halte den Tooltip informativ, aber kurz. HTML-Tags wie `<strong>` und `<br>` sind erlaubt und erwünscht.
+
+3.  **`verbose_tutor_info` (Das Tutor-Wissen):** Dies ist die "zweite Ebene" der Information, die **nur für die KI sichtbar** ist. Hier gehören umfassende Erklärungen, alternative Definitionen, häufige Missverständnisse, Beispiele und spezifische Anweisungen für den Tutor hinein, um tiefgründige Fragen stellen zu können.
+
+### C. Lesbarkeit der Lernkarte als oberstes Ziel
+
+Die Anordnung der `string`-Elemente auf der finalen Webseite muss logisch und leicht lesbar sein.
+
+  * **Listen mit Label:** Wenn eine Zeile ein Konzept und dessen Unterpunkte darstellt, sollte das erste `string`-Element als Label dienen und mit einem **Doppelpunkt** enden.
+
+      * *Beispiel:* `[{ "string": "Thread-Organisationsformen:" }, { "string": "Dispatcher/Worker" }, ...]`
+      * *Ergebnis:* • Thread-Organisationsformen: **Dispatcher/Worker** **Team** **Pipeline**
+
+  * **Klar benannte Hauptthemen:** Statt vager Labels wie `"Eigenschaften:"` sollte das Hauptkonzept selbst als Label dienen.
+
+      * *Schlecht:* `Thread Eigenschaften:`
+      * *Gut:* `Thread` (wobei die Eigenschaften im Tooltip oder `verbose_tutor_info` stehen)
+
+## 3\. Detaillierte JSON-Struktur
+
+Die Grundstruktur bleibt wie in der ursprünglichen Anleitung, wird aber durch die oben genannten Prinzipien ergänzt.
+
+```javascript
+const CONTENT_DATA = [
+  {
+    // Dies ist eine thematische Lernkarte (z.B. "Prozesse, Threads & Synchronisation")
+    "title": {
+      "string": "Titel der übergeordneten Lernkarte",
+      "tooltip": "Eine kurze Beschreibung des übergeordneten Themas der Karte.",
+      "verbose_tutor_info": "Generelle Lernziele für diese Karte und Hinweise für den Tutor, worauf er sich konzentrieren soll."
+    },
+    "content": [
+      // Jedes innere Array ist eine Zeile auf der Lernkarte.
+      [
+        // Jedes Objekt in der Zeile ist ein sichtbares Element (Stichwort).
+        {
+          "string": "Prägnantes Stichwort 1",
+          "tooltip": "Kurze Definition oder Erklärung zu Stichwort 1.",
+          "verbose_tutor_info": "Umfassende Details und Kontext zu Stichwort 1 für den Tutor."
+        },
+        {
+          "string": "Prägnantes Stichwort 2",
+          "tooltip": "Kurze Definition oder Erklärung zu Stichwort 2.",
+          "verbose_tutor_info": "Umfassende Details und Kontext zu Stichwort 2 für den Tutor."
+        }
+      ],
+      // Nächste Zeile auf der Karte
+      [
+        {
+          "string": "Weiteres Konzept",
+          "tooltip": "Erklärung zu diesem Konzept.",
+          "verbose_tutor_info": "Zusatzwissen für den Tutor."
+        }
+      ]
+    ]
+  }
+];
+```
+
+## 4\. Goldenes Beispiel (Anwendung der Prinzipien)
+
+Hier ist ein vollständiges Beispiel, wie die Karte "Prozesse, Threads & Synchronisation" idealerweise strukturiert sein sollte, um das gewünschte Ergebnis zu erzielen.
+
+```javascript
+{
+  "title": {
+    "string": "Prozesse, Threads & Synchronisation",
+    "tooltip": "Konzepte zur Verwaltung von nebenläufigen Ausführungen in einem Betriebssystem.",
+    "verbose_tutor_info": "Diese Karte deckt die grundlegenden Einheiten der Ausführung (Prozess, Thread) und die Probleme ab, die durch ihren gemeinsamen Zugriff auf Ressourcen entstehen (Mutual Exclusion, Race Conditions). Fokussiere auf die Unterschiede und die Notwendigkeit der Synchronisation."
+  },
+  "content": [
+    [
+      {
+        "string": "Prozess",
+        "tooltip": "Ein Programm in Ausführung mit eigenem, isoliertem Speicherbereich. Die Erzeugung ist ressourcenaufwendig.",
+        "verbose_tutor_info": "Die Kommunikation zwischen Prozessen (IPC) ist komplexer als zwischen Threads. Ein Prozesswechsel ist teuer, da der gesamte Adressraum umgeschaltet werden muss."
+      }
+    ],
+    [
+      {
+        "string": "Thread",
+        "tooltip": "Ein 'Leichtgewichtsprozess'; ein Ausführungsstrang innerhalb eines Prozesses, der sich den Speicherbereich mit anderen Threads teilt. <strong>Eigenschaften:</strong> Gemeinsamer Adressraum, schnelle Kommunikation, aber explizite Synchronisation notwendig.",
+        "verbose_tutor_info": "Threads sind schneller zu erzeugen und zu wechseln als Prozesse. Jeder Thread hat seinen eigenen Stack und Registersatz, teilt sich aber den Heap und die globalen Variablen mit anderen Threads desselben Prozesses."
+      }
+    ],
+    [
+      {
+        "string": "Thread-Organisationsformen:",
+        "tooltip": "Beschreibt, wie Threads zusammenarbeiten, um Aufgaben zu erledigen.",
+        "verbose_tutor_info": "Frage nach den Diagrammen der drei Modelle und ihren jeweiligen Anwendungsfällen."
+      },
+      {
+        "string": "Dispatcher/Worker",
+        "tooltip": "Ein Master-Thread verteilt Aufgaben an Worker-Threads.",
+        "verbose_tutor_info": "Auch bekannt als Master/Slave-Modell."
+      },
+      {
+        "string": "Team",
+        "tooltip": "Gleichberechtigte Threads holen sich Aufgaben aus einem gemeinsamen Pool.",
+        "verbose_tutor_info": "Erfordert einen synchronisierten Zugriff auf den Aufgaben-Pool."
+      },
+      {
+        "string": "Pipeline",
+        "tooltip": "Jeder Thread bearbeitet eine Stufe der Aufgabe und gibt sie an den nächsten weiter.",
+        "verbose_tutor_info": "Effizient für Aufgaben, die sich in sequenzielle Teilschritte zerlegen lassen."
+      }
+    ],
+    [
+      {
+        "string": "Thread-Lebenszyklus",
+        "tooltip": "Die Zustände, die ein Thread durchläuft: New, Runnable, Blocked, Running, Terminated.",
+        "verbose_tutor_info": "Frage den Nutzer, wie ein Thread zwischen den Zuständen wechselt (z.B. von Running zu Blocked durch Warten auf I/O oder einen Lock)."
+      }
+    ],
+    [
+      {
+        "string": "Synchronisationsprobleme:",
+        "tooltip": "Probleme, die durch unkoordinierten Zugriff auf geteilte Ressourcen entstehen.",
+        "verbose_tutor_info": "Lass den Nutzer den Zusammenhang erklären: Das Mutual Exclusion Problem ist die Problemstellung, Race Conditions sind die Fehler, die dadurch verhindert werden sollen."
+      },
+      {
+        "string": "Mutual Exclusion",
+        "tooltip": "Das Problem, den exklusiven Zugriff auf eine Ressource (im 'kritischen Abschnitt') sicherzustellen.",
+        "verbose_tutor_info": "Gelöst durch Mechanismen wie Locks, Semaphore oder Monitore."
+      },
+      {
+        "string": "Race Condition",
+        "tooltip": "Ein Fehler, bei dem das Ergebnis von der unvorhersehbaren Reihenfolge der Thread-Ausführung abhängt.",
+        "verbose_tutor_info": "Klassisches Beispiel: Zwei Threads versuchen gleichzeitig, einen Kontostand zu aktualisieren."
+      }
+    ]
+  }
+]
+```

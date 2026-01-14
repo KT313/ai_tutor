@@ -1,0 +1,11 @@
+Get api key (free):
+
+open https://aistudio.google.com (log in if needed with your google account)
+open https://aistudio.google.com/projects
+click on "Create a new project" and create a new project (it will be set to the free tier by default, which has limited usage but you don't have to pay for it at all)
+open https://aistudio.google.com/api-keys
+click on "Create API key" and create a key (for the project that you created at the last step)
+after creating the key, look at the very right side of where the key way created, there is a button where you can copy the api key. (it's directly to the right of the blue text that says "set up billing".)
+
+open the html file (site.html) in your browser (it should work by just double-clicking the file) and enter the api key at the very top, then click the "Save" button on the right.
+Now open generation_steps.txt and follow the instructions to get your study content ready! :)

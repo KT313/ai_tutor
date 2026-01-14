@@ -1,0 +1,3 @@
+Please double-check the documents, it is imperative that no potentially relevant information is missing in CONTENT_DATA!
+
+Do not modify and re-write the whole CONTENT_DATA json that you already wrote. Write a new one with additions and things that you missed in the first one, and i will manually merge them later.

@@ -1,0 +1,20 @@
+Collect the study material that you want to generate a test exam for.
+Recommended amount: 1 week worth of study material. Can be PDFs, text files or other text documents.
+
+open https://gemini.google.com/app and log in with your google account.
+In the bottom right of the chat (next to the microphone icon), you can select which ai model to use. If you have a subscription (recommended), select the "Pro" model. Otherwise, select the "Thinking" model. Do NOT select the "Fast" model!
+
+in the same place that you found this text file in (that you are currently reading), there is a folder called "prompts". 
+
+1. Open the folder and copy the contents of 1a.txt into the gemini chat, but do not send it yet.
+Now drag and drop the study material files into the chat as well. (hint: for gemini, you can only upload 10 pdf files at once i think. if you have too many pdf files, you can use an online tool to merge them into a lower amount of smaller files instead, so you can still upload everything in one message.) After this, send the message and wait for the reply.
+
+2. After you receive the reply from gemini, it should have written CONTENT_DATA for you. Copy this and save it for later. 
+3. Copy the contents of 1b.txt into the same chat and send it.
+
+4. Gemini should now have written a 2nd CONTENT_DATA for you. Copy this and save it for later, next to the first one. 
+5. Important: Open a new chat with gemini now (make sure that the correct model is selected again, as you did in the beginning for the first chat).
+6. Open file 2a.txt and copy it into the new chat. The text that you just copied contains the words "INSERT HERE". This is where you put both CONTENT_DATA texts that you saved from the first chat. Then send the message and wait for the reply. The output of gemini should contain a single (probably quite long) CONTENT_DATA object. This contains all the material for the interactive tutoring / exam.
+7. Copy this CONTENT_DATA, open site.html with a text editor (not in the browser), go to line 646 (or you can search for "CONTENT_DATA" with Ctrl+F) and insert it there. Above line 646, you can see an example of what the structure should look like after you insert it.
+8. Save the modified file and open it in your browser. Done! Don't forget to insert your api key on the top of the site, as explained in setup_steps.txt!
+
