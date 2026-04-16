@@ -1,0 +1,87 @@
+{
+  "id": "german_bwl",
+  "language": "de",
+  "title": "BWL Grundlagen",
+  "cards": [
+    {
+      "title": {
+        "string": "Einführung in die Betriebswirtschaftslehre (BWL)",
+        "tooltip": "Grundlagen, zentrale Begriffe und historische Einordnung der BWL.",
+        "verbose_tutor_info": "Diese Karte behandelt die Definition, die wissenschaftliche Einordnung und die grundlegenden Konzepte der Betriebswirtschaftslehre. Der Tutor sollte die Abgrenzung zur Volkswirtschaftslehre (VWL) und die Bedeutung des Wirtschaftlichkeitsprinzips prüfen."
+      },
+      "content": [
+        [
+          {
+            "string": "Definition BWL:",
+            "tooltip": "Die BWL ist die Lehre vom Wirtschaften in Betrieben, also in Wirtschaftseinheiten, die Güter zur Deckung fremder Bedarfe produzieren.",
+            "verbose_tutor_info": "Die Betriebswirtschaftslehre (BWL) ist eine Wissenschaftsdisziplin, die sich mit den wirtschaftlichen Aspekten von Betrieben (Unternehmen) befasst. Ihr 'Geburtsjahr' wird auf 1898 datiert."
+          }
+        ],
+        [
+          {
+            "string": "Abgrenzung VWL:",
+            "tooltip": "Die VWL betrachtet <strong>gesamtwirtschaftliche</strong> Zusammenhänge (Märkte, Staaten), die BWL den <strong>einzelnen Betrieb</strong>.",
+            "verbose_tutor_info": "Die Volkswirtschaftslehre (VWL) ist eine Schwesterdisziplin der BWL. Beide gehören zu den Wirtschaftswissenschaften, unterscheiden sich aber im Erkenntnisobjekt."
+          }
+        ],
+        [
+          {
+            "string": "Wirtschaftlichkeitsprinzip",
+            "tooltip": "Oberstes Prinzip rationalen Handelns: Ertrag/Aufwand → Maximum bei gegebenem Input (Maximumprinzip) oder Minimum an Input bei gegebenem Output (Minimumprinzip).",
+            "verbose_tutor_info": "Das Wirtschaftlichkeitsprinzip ist das Rationalprinzip angewandt auf knappe Güter. Es hat zwei Ausprägungen: Maximum- und Minimumprinzip."
+          }
+        ]
+      ]
+    },
+    {
+      "title": {
+        "string": "Unternehmensziele und Kennzahlen",
+        "tooltip": "Hierarchie, Arten und Messung von Unternehmenszielen.",
+        "verbose_tutor_info": "Diese Karte behandelt die verschiedenen Arten von Zielen, ihre Beziehungen zueinander und wie ihr Erreichungsgrad durch Kennzahlen gemessen wird."
+      },
+      "content": [
+        [
+          {
+            "string": "Zieltypen:",
+            "tooltip": "Unterscheidung von Zielen nach ihrem Bezug. Sachziele (Was?) und Formalziele (Wie erfolgreich?).",
+            "verbose_tutor_info": "Im Rahmen der betriebswirtschaftlichen Zielkonzeption werden Sach- und Formalziele unterschieden."
+          },
+          {
+            "string": "Sachziele",
+            "tooltip": "Beziehen sich auf die konkrete Leistungserstellung (Leistungsbezug). Beispiele: Art, Menge, Qualität der Produkte.",
+            "verbose_tutor_info": "Sachziele definieren das Betätigungsfeld eines Unternehmens. Man unterscheidet Leistungsziele, Finanzziele, Führungs- und Organisationsziele sowie soziale und ökologische Ziele."
+          },
+          {
+            "string": "Formalziele",
+            "tooltip": "Beschreiben den angestrebten <strong>Erfolg</strong> (z.B. Gewinn, Rentabilität, Marktanteil).",
+            "verbose_tutor_info": "Formalziele (Erfolgsziele) drücken aus, wie erfolgreich die Sachziele erreicht werden sollen. Zentral sind Produktivität, Wirtschaftlichkeit und Rentabilität."
+          }
+        ],
+        [
+          {
+            "string": "Rentabilität =",
+            "tooltip": "Gewinn / eingesetztes Kapital × 100. Gibt die Verzinsung des eingesetzten Kapitals an.",
+            "verbose_tutor_info": "Rentabilitätskennzahlen: Eigenkapitalrentabilität, Gesamtkapitalrentabilität, Umsatzrentabilität. Wichtige Klausurfragen!"
+          }
+        ]
+      ]
+    },
+    {
+      "title": {
+        "string": "Mögliche Zusatzfragen",
+        "tooltip": "Nicht kernprüfungsrelevant, aber häufig als Transferfragen gestellt.",
+        "verbose_tutor_info": "Diese Karte enthält Inhalte, die im Randbereich der Klausur liegen. Der Tutor sollte diese nur nach Abschluss der Kerninhalte ansprechen.",
+        "extra_class": "extra-info"
+      },
+      "content": [
+        [
+          {
+            "string": "Stakeholder vs. Shareholder",
+            "tooltip": "Shareholder-Ansatz: Wertmaximierung für Eigentümer.<br>Stakeholder-Ansatz: Ausgleich der Interessen aller Anspruchsgruppen.",
+            "verbose_tutor_info": "Der Shareholder-Value-Ansatz nach Rappaport fokussiert auf die Eigentümer. Der Stakeholder-Ansatz berücksichtigt Mitarbeiter, Kunden, Lieferanten, Staat und Gesellschaft."
+          }
+        ]
+      ]
+    }
+  ]
+}
