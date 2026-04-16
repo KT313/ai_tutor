@@ -16,22 +16,35 @@ import {
   systemPromptInfo,
   uiStrings,
 } from '../lib/tutorPrompts';
+import {
+  deleteHistory,
+  loadDraft,
+  loadHistory,
+  saveDraft,
+  saveHistory,
+  type ConversationEntry,
+  type SaveResult,
+} from '../lib/history';
 import { useApp } from '../context/AppContext';
 import { Markdown } from './Markdown';
+
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
 
 interface TutorModalProps {
   topic: string;
   context: string;
+  contentId: string;
+  topicSlug: string;
   onClose: () => void;
 }
 
-type Entry =
-  | { kind: 'question'; text: string }
-  | { kind: 'userAnswer'; text: string }
-  | { kind: 'evaluation'; text: string }
-  | { kind: 'userFollowUp'; text: string }
-  | { kind: 'tutorAnswer'; text: string };
+// ---------------------------------------------------------------------------
+// Reducer types
+// ---------------------------------------------------------------------------
 
+type Entry = ConversationEntry;
 type Mode = 'loading' | 'awaitingAnswer' | 'showingEvaluation';
 
 interface State {
@@ -41,9 +54,11 @@ interface State {
   conversation: Entry[];
   streamBuffer: string;
   error: string | null;
+  updatedAt: number | null;
 }
 
 type Action =
+  | { type: 'RESTORE'; chatHistory: ChatMessage[]; conversation: Entry[]; currentQuestion: string; updatedAt: number }
   | { type: 'LOAD_START' }
   | { type: 'STREAM_APPEND'; chunk: string }
   | { type: 'QUESTION_COMPLETE'; userTurn: string; modelText: string; resetConversation: boolean }
@@ -53,7 +68,8 @@ type Action =
   | { type: 'ERROR'; message: string }
   | { type: 'CLEAR_HISTORY' }
   | { type: 'REMOVE_LAST' }
-  | { type: 'DISMISS_ERROR' };
+  | { type: 'DISMISS_ERROR' }
+  | { type: 'SET_UPDATED_AT'; updatedAt: number };
 
 const initialState: State = {
   mode: 'loading',
@@ -62,10 +78,29 @@ const initialState: State = {
   conversation: [],
   streamBuffer: '',
   error: null,
+  updatedAt: null,
 };
+
+// ---------------------------------------------------------------------------
+// Reducer
+// ---------------------------------------------------------------------------
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
+    case 'RESTORE': {
+      const mode: Mode = action.conversation.length > 0 ? 'showingEvaluation' : 'awaitingAnswer';
+      return {
+        ...state,
+        mode,
+        chatHistory: action.chatHistory,
+        conversation: action.conversation,
+        currentQuestion: action.currentQuestion,
+        updatedAt: action.updatedAt,
+        error: null,
+        streamBuffer: '',
+      };
+    }
+
     case 'LOAD_START':
       return { ...state, mode: 'loading', streamBuffer: '', error: null };
 
@@ -152,19 +187,81 @@ function reducer(state: State, action: Action): State {
     case 'DISMISS_ERROR':
       return { ...state, error: null };
 
+    case 'SET_UPDATED_AT':
+      return { ...state, updatedAt: action.updatedAt };
+
     default:
       return state;
   }
 }
 
-export function TutorModal({ topic, context, onClose }: TutorModalProps) {
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+export function TutorModal({ topic, context, contentId, topicSlug, onClose }: TutorModalProps) {
   const { apiKey, optionalInstruction: optInstr } = useApp();
   const [state, dispatch] = useReducer(reducer, initialState);
   const [answerDraft, setAnswerDraft] = useState('');
   const [followUpDraft, setFollowUpDraft] = useState('');
   const abortRef = useRef<AbortController | null>(null);
+  // Tracks updatedAt across async persist calls (avoids stale closure reads).
+  const updatedAtRef = useRef<number | null>(null);
 
-  const systemInstruction = useCallback((): string => {
+  // --- Persistence helpers ---
+
+  const persistData = useCallback(
+    async (
+      chatHistory: ChatMessage[],
+      conversation: Entry[],
+      currentQuestion: string,
+    ) => {
+      if (chatHistory.length === 0) return;
+      const result: SaveResult = await saveHistory(contentId, topicSlug, {
+        chatHistory,
+        conversation,
+        modalState: { currentQuestion },
+        updatedAt: updatedAtRef.current,
+      });
+      if (result.ok && result.updatedAt) {
+        updatedAtRef.current = result.updatedAt;
+        dispatch({ type: 'SET_UPDATED_AT', updatedAt: result.updatedAt });
+      } else if (result.conflict) {
+        dispatch({
+          type: 'ERROR',
+          message: 'Dieser Verlauf wurde in einem anderen Tab geändert. Bitte Seite neu laden.',
+        });
+      }
+    },
+    [contentId, topicSlug],
+  );
+
+  // Refs so the 1-second interval can read current values without recreating the effect.
+  const modeRef = useRef<Mode>(state.mode);
+  modeRef.current = state.mode;
+  const answerDraftRef = useRef(answerDraft);
+  answerDraftRef.current = answerDraft;
+  const followUpDraftRef = useRef(followUpDraft);
+  followUpDraftRef.current = followUpDraft;
+  const lastSavedDraftRef = useRef('');
+
+  // Save the active draft every 1 second if it changed.
+  useEffect(() => {
+    const id = setInterval(() => {
+      const active = modeRef.current === 'awaitingAnswer'
+        ? answerDraftRef.current
+        : followUpDraftRef.current;
+      if (active !== lastSavedDraftRef.current) {
+        lastSavedDraftRef.current = active;
+        void saveDraft(contentId, topicSlug, active);
+      }
+    }, 1000);
+    return () => clearInterval(id);
+  }, [contentId, topicSlug]);
+
+  // --- Gemini streaming ---
+
+  const systemInstructionText = useCallback((): string => {
     const suffix = optInstr ? `\n${optionalInstruction}` : '';
     return `${systemPromptInfo}\n\nKontext zum Thema:\n${context}${suffix}`;
   }, [context, optInstr]);
@@ -187,7 +284,7 @@ export function TutorModal({ topic, context, onClose }: TutorModalProps) {
         let full = '';
         for await (const chunk of streamGenerateContent({
           apiKey,
-          systemInstruction: systemInstruction(),
+          systemInstruction: systemInstructionText(),
           contents,
           signal: controller.signal,
         })) {
@@ -202,36 +299,93 @@ export function TutorModal({ topic, context, onClose }: TutorModalProps) {
         dispatch({ type: 'ERROR', message: `${uiStrings.errorPrefix}: ${msg}` });
       }
     },
-    [apiKey, systemInstruction],
+    [apiKey, systemInstructionText],
   );
 
+  // Ask for a question, then persist the result.
+  // `existingHistory` / `existingConversation` are the state BEFORE this call.
   const askForQuestion = useCallback(
-    async (existing: ChatMessage[], resetConversation: boolean): Promise<void> => {
+    async (
+      existingHistory: ChatMessage[],
+      existingConversation: Entry[],
+      resetConversation: boolean,
+    ): Promise<void> => {
       const userTurn =
-        existing.length === 0 ? firstQuestionTemplate(topic) : newQuestionRequest;
+        existingHistory.length === 0 ? firstQuestionTemplate(topic) : newQuestionRequest;
       const contents: ChatMessage[] = [
-        ...existing,
+        ...existingHistory,
         { role: 'user', parts: [{ text: userTurn }] },
       ];
       await runStream(contents, (modelText) => {
-        dispatch({
-          type: 'QUESTION_COMPLETE',
-          userTurn,
-          modelText,
-          resetConversation,
-        });
+        dispatch({ type: 'QUESTION_COMPLETE', userTurn, modelText, resetConversation });
+
+        // Build post-dispatch state for persistence:
+        const newHistory: ChatMessage[] = [
+          ...existingHistory,
+          { role: 'user', parts: [{ text: userTurn }] },
+          { role: 'model', parts: [{ text: modelText }] },
+        ];
+        const newConvo = resetConversation ? [] : existingConversation;
+        void persistData(newHistory, newConvo, modelText);
       });
     },
-    [runStream, topic],
+    [runStream, topic, persistData],
   );
 
+  // --- Init: load persisted history or start fresh ---
+
   useEffect(() => {
-    void askForQuestion([], true);
+    let cancelled = false;
+
+    async function init() {
+      const [saved, draft] = await Promise.all([
+        loadHistory(contentId, topicSlug),
+        loadDraft(contentId, topicSlug),
+      ]);
+      if (cancelled) return;
+
+      if (saved && saved.chatHistory.length > 0) {
+        updatedAtRef.current = saved.updatedAt;
+        const hasConversation = saved.conversation && saved.conversation.length > 0;
+        dispatch({
+          type: 'RESTORE',
+          chatHistory: saved.chatHistory,
+          conversation: saved.conversation ?? [],
+          currentQuestion: saved.modalState?.currentQuestion ?? '',
+          updatedAt: saved.updatedAt,
+        });
+        if (draft) {
+          // Restore draft to the textarea that will be visible.
+          if (hasConversation) {
+            setFollowUpDraft(draft);
+          } else {
+            setAnswerDraft(draft);
+          }
+          lastSavedDraftRef.current = draft;
+        }
+      } else {
+        void askForQuestion([], [], true);
+      }
+    }
+
+    void init();
+
     return () => {
+      cancelled = true;
       abortRef.current?.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // --- Close handler: flush draft ---
+
+  const handleClose = useCallback(async () => {
+    const activeDraft = state.mode === 'awaitingAnswer' ? answerDraft : followUpDraft;
+    await saveDraft(contentId, topicSlug, activeDraft);
+    onClose();
+  }, [state.mode, answerDraft, followUpDraft, contentId, topicSlug, onClose]);
+
+  // --- Actions ---
 
   const submitAnswer = async (): Promise<void> => {
     const answer = answerDraft.trim();
@@ -239,16 +393,35 @@ export function TutorModal({ topic, context, onClose }: TutorModalProps) {
       dispatch({ type: 'ERROR', message: uiStrings.errorEmptyAnswer });
       return;
     }
-    // Transient user turn for the Gemini call: bare answer + evaluation rubric.
-    // Only the bare answer is persisted to chatHistory (via EVALUATION_COMPLETE),
-    // so future turns don't re-send the rubric.
     const transientContents: ChatMessage[] = [
       ...state.chatHistory,
       { role: 'user', parts: [{ text: `${answer}\n\n${evaluationPrompt}` }] },
     ];
+
+    // Capture pre-dispatch state for persist.
+    const prevHistory = state.chatHistory;
+    const prevConversation = state.conversation;
+    const prevQuestion = state.currentQuestion;
+
     await runStream(transientContents, (modelText) => {
       dispatch({ type: 'EVALUATION_COMPLETE', modelText, answer });
       setAnswerDraft('');
+      lastSavedDraftRef.current = '';
+      void saveDraft(contentId, topicSlug, '');
+
+      // Build post-dispatch state:
+      const newHistory: ChatMessage[] = [
+        ...prevHistory,
+        { role: 'user', parts: [{ text: answer }] },
+        { role: 'model', parts: [{ text: modelText }] },
+      ];
+      const newConvo: Entry[] = [
+        ...prevConversation,
+        { kind: 'question', text: prevQuestion },
+        { kind: 'userAnswer', text: answer },
+        { kind: 'evaluation', text: modelText },
+      ];
+      void persistData(newHistory, newConvo, prevQuestion);
     });
   };
 
@@ -261,32 +434,69 @@ export function TutorModal({ topic, context, onClose }: TutorModalProps) {
     dispatch({ type: 'FOLLOW_UP_SENT', text: q });
     setFollowUpDraft('');
 
+    // Capture pre-dispatch state:
+    const prevHistory = state.chatHistory;
+    const prevConversation = state.conversation;
+    const currentQuestion = state.currentQuestion;
+
     const contents: ChatMessage[] = [
-      ...state.chatHistory,
+      ...prevHistory,
       { role: 'user', parts: [{ text: q }] },
     ];
     await runStream(contents, (modelText) => {
       dispatch({ type: 'FOLLOW_UP_COMPLETE', modelText });
+
+      const newHistory: ChatMessage[] = [
+        ...prevHistory,
+        { role: 'user', parts: [{ text: q }] },
+        { role: 'model', parts: [{ text: modelText }] },
+      ];
+      const newConvo: Entry[] = [
+        ...prevConversation,
+        { kind: 'userFollowUp', text: q },
+        { kind: 'tutorAnswer', text: modelText },
+      ];
+      void persistData(newHistory, newConvo, currentQuestion);
     });
   };
 
   const newQuestion = () => {
-    void askForQuestion(state.chatHistory, true);
+    void askForQuestion(state.chatHistory, state.conversation, true);
   };
 
   const clearHistory = () => {
     if (!window.confirm(uiStrings.confirmClearHistory)) return;
     abortRef.current?.abort();
     dispatch({ type: 'CLEAR_HISTORY' });
-    void askForQuestion([], true);
+    updatedAtRef.current = null;
+    void deleteHistory(contentId, topicSlug);
+    void askForQuestion([], [], true);
   };
 
   const removeLast = () => {
     dispatch({ type: 'REMOVE_LAST' });
+
+    // Build the trimmed state for persistence:
+    const hist = [...state.chatHistory];
+    while (hist.length && hist[hist.length - 1].role === 'model') hist.pop();
+    while (hist.length && hist[hist.length - 1].role === 'user') hist.pop();
+
+    const convo = [...state.conversation];
+    if (convo.at(-1)?.kind === 'tutorAnswer') {
+      convo.pop();
+      if (convo.at(-1)?.kind === 'userFollowUp') convo.pop();
+    } else if (convo.at(-1)?.kind === 'evaluation') {
+      convo.pop();
+      if (convo.at(-1)?.kind === 'userAnswer') convo.pop();
+      if (convo.at(-1)?.kind === 'question') convo.pop();
+    }
+    void persistData(hist, convo, state.currentQuestion);
   };
 
+  // --- UI handlers ---
+
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) onClose();
+    if (e.target === e.currentTarget) void handleClose();
   };
 
   const handleAnswerKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -296,8 +506,14 @@ export function TutorModal({ topic, context, onClose }: TutorModalProps) {
     }
   };
 
+  const onAnswerChange = (val: string) => {
+    setAnswerDraft(val);
+  };
+
   const streaming = state.mode === 'loading' && state.streamBuffer.length > 0;
   const showLoader = state.mode === 'loading' && state.streamBuffer.length === 0;
+
+  // --- Render ---
 
   return (
     <div
@@ -311,7 +527,7 @@ export function TutorModal({ topic, context, onClose }: TutorModalProps) {
           </h4>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="cursor-pointer border-0 bg-transparent text-[28px] font-bold text-[#aaa] transition-colors hover:text-[#333]"
             aria-label="Close"
           >
@@ -351,7 +567,7 @@ export function TutorModal({ topic, context, onClose }: TutorModalProps) {
               </div>
               <textarea
                 value={answerDraft}
-                onChange={(e) => setAnswerDraft(e.target.value)}
+                onChange={(e) => onAnswerChange(e.target.value)}
                 onKeyDown={handleAnswerKey}
                 placeholder={uiStrings.answerPlaceholder}
                 className="mb-4 block h-32 w-full resize-y rounded-lg border border-[#ccc] p-3 font-sans text-[10pt]"
@@ -420,6 +636,10 @@ export function TutorModal({ topic, context, onClose }: TutorModalProps) {
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Conversation message sub-component
+// ---------------------------------------------------------------------------
 
 function ConversationMessage({ entry }: { entry: Entry }) {
   const label = (
