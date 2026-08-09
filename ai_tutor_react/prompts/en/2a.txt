@@ -1,0 +1,174 @@
+I previously gave an AI assistant the following task:
+
+<task>
+The attached files are slides for a university course.
+Please use the attached documents (PDFs with lecture content) and write down the relevant information for every exam-relevant topic.
+The format for the information should be adapted as follows so that it can be practiced on a website with an AI tutor:
+
+# Guide for Creating AI Tutor Learning Content
+
+## 1\. Objective
+
+Using the provided documents (e.g. a question catalog and lecture slides), create a single JavaScript variable called `CONTENT_DATA`. This variable serves as a structured knowledge base for an AI-powered learning tutor.
+
+## 2\. Fundamental Principles of Structuring
+
+### A. Semantic Grouping Instead of Linear Sequence
+
+The most important task is to group the content from the documents into a small number of thematically coherent **learning cards**. Do **not** create a separate card for each individual question from the question catalog. Instead, combine logically related topics into a single overarching card.
+
+  * **Examples of good card titles:** "Fundamentals of Parallel Processing", "Processes, Threads & Synchronization", "Swarm Intelligence Algorithms".
+  * **Example of a bad structure:** One card for "What is a process?", another for "What is a thread?", a third for "What is the difference?". Instead, combine these into the card "Processes, Threads & Synchronization".
+
+### B. Clear Separation of Keyword, Explanation, and Tutor Knowledge
+
+Each individual content point should be structured according to the following principle to create a clear and interactive learning interface:
+
+1.  **`string` (The Keyword):** This is the visible text. It must be **extremely concise** — ideally one to three words. It serves as an anchor or label for the concept.
+
+      * *Good:* `"Process"`, `"Amdahl's Law"`, `"Advantages"`
+      * *Bad:* `"A process is a program in execution with its own isolated memory space."`
+
+2.  **`tooltip` (The Explanation):** This is the "first level" of information that appears on mouse hover. It contains the **short definition, the most important formula, or a concise example list**. Keep the tooltip informative but short. HTML tags like `<strong>` and `<br>` are allowed and encouraged.
+
+3.  **`verbose_tutor_info` (The Tutor Knowledge):** This is the "second level" of information that is **only visible to the AI**. This is where comprehensive explanations, alternative definitions, common misconceptions, examples, and specific instructions for the tutor belong, to enable deep questioning.
+
+### C. Readability of the Learning Card as the Top Priority
+
+The arrangement of `string` elements on the final website must be logical and easy to read.
+
+  * **Lists with Labels:** When a row represents a concept and its sub-items, the first `string` element should serve as a label and end with a **colon**.
+
+      * *Example:* `[{ "string": "Thread Organization Forms:" }, { "string": "Dispatcher/Worker" }, ...]`
+      * *Result:* • Thread Organization Forms: **Dispatcher/Worker** **Team** **Pipeline**
+
+  * **Clearly Named Main Topics:** Instead of vague labels like `"Properties:"`, the main concept itself should serve as the label.
+
+      * *Bad:* `Thread Properties:`
+      * *Good:* `Thread` (with the properties in the tooltip or `verbose_tutor_info`)
+
+## 3\. Detailed JSON Structure
+
+The basic structure remains as in the original guide, but is supplemented by the principles mentioned above.
+
+```javascript
+const CONTENT_DATA = [
+  {
+    // This is a thematic learning card (e.g. "Processes, Threads & Synchronization")
+    "title": {
+      "string": "Title of the overarching learning card",
+      "tooltip": "A short description of the card's overarching topic.",
+      "verbose_tutor_info": "General learning objectives for this card and hints for the tutor on what to focus on."
+    },
+    "content": [
+      // Each inner array is a row on the learning card.
+      [
+        // Each object in the row is a visible element (keyword).
+        {
+          "string": "Concise Keyword 1",
+          "tooltip": "Short definition or explanation for Keyword 1.",
+          "verbose_tutor_info": "Comprehensive details and context for Keyword 1 for the tutor."
+        },
+        {
+          "string": "Concise Keyword 2",
+          "tooltip": "Short definition or explanation for Keyword 2.",
+          "verbose_tutor_info": "Comprehensive details and context for Keyword 2 for the tutor."
+        }
+      ],
+      // Next row on the card
+      [
+        {
+          "string": "Another Concept",
+          "tooltip": "Explanation of this concept.",
+          "verbose_tutor_info": "Additional knowledge for the tutor."
+        }
+      ]
+    ]
+  }
+];
+```
+
+## 4\. Golden Example (Applying the Principles)
+
+Here is a complete example of how the card "Processes, Threads & Synchronization" should ideally be structured to achieve the desired result.
+
+```javascript
+{
+  "title": {
+    "string": "Processes, Threads & Synchronization",
+    "tooltip": "Concepts for managing concurrent execution in an operating system.",
+    "verbose_tutor_info": "This card covers the fundamental units of execution (process, thread) and the problems that arise from their shared access to resources (mutual exclusion, race conditions). Focus on the differences and the necessity of synchronization."
+  },
+  "content": [
+    [
+      {
+        "string": "Process",
+        "tooltip": "A program in execution with its own isolated memory space. Creation is resource-intensive.",
+        "verbose_tutor_info": "Communication between processes (IPC) is more complex than between threads. A process switch is expensive because the entire address space must be switched."
+      }
+    ],
+    [
+      {
+        "string": "Thread",
+        "tooltip": "A 'lightweight process'; an execution strand within a process that shares the memory space with other threads. <strong>Properties:</strong> Shared address space, fast communication, but explicit synchronization required.",
+        "verbose_tutor_info": "Threads are faster to create and switch than processes. Each thread has its own stack and register set, but shares the heap and global variables with other threads of the same process."
+      }
+    ],
+    [
+      {
+        "string": "Thread Organization Forms:",
+        "tooltip": "Describes how threads cooperate to complete tasks.",
+        "verbose_tutor_info": "Ask about the diagrams of the three models and their respective use cases."
+      },
+      {
+        "string": "Dispatcher/Worker",
+        "tooltip": "A master thread distributes tasks to worker threads.",
+        "verbose_tutor_info": "Also known as the master/slave model."
+      },
+      {
+        "string": "Team",
+        "tooltip": "Equal-privilege threads fetch tasks from a shared pool.",
+        "verbose_tutor_info": "Requires synchronized access to the task pool."
+      },
+      {
+        "string": "Pipeline",
+        "tooltip": "Each thread processes one stage of the task and passes it to the next.",
+        "verbose_tutor_info": "Efficient for tasks that can be broken down into sequential sub-steps."
+      }
+    ],
+    [
+      {
+        "string": "Thread Lifecycle",
+        "tooltip": "The states a thread goes through: New, Runnable, Blocked, Running, Terminated.",
+        "verbose_tutor_info": "Ask the user how a thread transitions between states (e.g. from Running to Blocked by waiting for I/O or a lock)."
+      }
+    ],
+    [
+      {
+        "string": "Synchronization Problems:",
+        "tooltip": "Problems that arise from uncoordinated access to shared resources.",
+        "verbose_tutor_info": "Have the user explain the connection: The Mutual Exclusion problem is the problem statement, Race Conditions are the errors that it aims to prevent."
+      },
+      {
+        "string": "Mutual Exclusion",
+        "tooltip": "The problem of ensuring exclusive access to a resource (in the 'critical section').",
+        "verbose_tutor_info": "Solved by mechanisms like locks, semaphores, or monitors."
+      },
+      {
+        "string": "Race Condition",
+        "tooltip": "A bug where the result depends on the unpredictable order of thread execution.",
+        "verbose_tutor_info": "Classic example: Two threads simultaneously trying to update an account balance."
+      }
+    ]
+  }
+]
+```
+</task>
+
+and I developed the following with it:
+
+<result>
+INSERT HERE
+</result>
+
+The result is very good content-wise, but there are too many individual cards. The content is not optimally bundled by theme. Please group the content into somewhat fewer cards/entries, WITHOUT REMOVING ANY INFORMATION FROM THE FINAL RESULT! The final result must not be missing any information or tasks that appeared in the original! It should be a single JSON dict that contains all given information, just better structured and more organized!

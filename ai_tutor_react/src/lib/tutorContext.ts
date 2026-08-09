@@ -1,8 +1,8 @@
 import type { Card } from './types';
-import { contextLabels } from './tutorPrompts';
+import type { Locale } from './i18n';
 
-export function buildTutorContext(card: Card): string {
-  const { theme, overview, bulletPoints, tutorHint } = contextLabels;
+export function buildTutorContext(card: Card, locale: Locale): string {
+  const { theme, overview, bulletPoints, tutorHint } = locale.tutor.contextLabels;
 
   let ctx = `${theme}: ${card.title.string}\n`;
   if (card.title.verbose_tutor_info) {

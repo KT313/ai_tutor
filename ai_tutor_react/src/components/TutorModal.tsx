@@ -7,15 +7,7 @@ import {
   type KeyboardEvent,
 } from 'react';
 import type { ChatMessage } from '../lib/types';
-import { streamGenerateContent } from '../lib/gemini';
-import {
-  evaluationPrompt,
-  firstQuestionTemplate,
-  newQuestionRequest,
-  optionalInstruction,
-  systemPromptInfo,
-  uiStrings,
-} from '../lib/tutorPrompts';
+import { streamChat } from '../lib/streamProvider';
 import {
   deleteHistory,
   loadDraft,
@@ -200,7 +192,9 @@ function reducer(state: State, action: Action): State {
 // ---------------------------------------------------------------------------
 
 export function TutorModal({ topic, context, contentId, topicSlug, onClose }: TutorModalProps) {
-  const { apiKey, optionalInstruction: optInstr } = useApp();
+  const { apiKey, provider, tutorModel, optionalInstruction: optInstr, locale } = useApp();
+  const ui = locale.ui;
+  const tutor = locale.tutor;
   const [state, dispatch] = useReducer(reducer, initialState);
   const [answerDraft, setAnswerDraft] = useState('');
   const [followUpDraft, setFollowUpDraft] = useState('');
@@ -229,7 +223,7 @@ export function TutorModal({ topic, context, contentId, topicSlug, onClose }: Tu
       } else if (result.conflict) {
         dispatch({
           type: 'ERROR',
-          message: 'Dieser Verlauf wurde in einem anderen Tab geändert. Bitte Seite neu laden.',
+          message: ui.conflictError,
         });
       }
     },
@@ -262,9 +256,9 @@ export function TutorModal({ topic, context, contentId, topicSlug, onClose }: Tu
   // --- Gemini streaming ---
 
   const systemInstructionText = useCallback((): string => {
-    const suffix = optInstr ? `\n${optionalInstruction}` : '';
-    return `${systemPromptInfo}\n\nKontext zum Thema:\n${context}${suffix}`;
-  }, [context, optInstr]);
+    const suffix = optInstr ? `\n${tutor.optionalInstruction}` : '';
+    return `${tutor.systemPromptInfo}\n\n${context}${suffix}`;
+  }, [context, optInstr, tutor]);
 
   const runStream = useCallback(
     async (
@@ -272,7 +266,7 @@ export function TutorModal({ topic, context, contentId, topicSlug, onClose }: Tu
       onComplete: (fullText: string) => void,
     ): Promise<void> => {
       if (!apiKey) {
-        dispatch({ type: 'ERROR', message: uiStrings.errorNoApiKey });
+        dispatch({ type: 'ERROR', message: ui.errorNoApiKey });
         return;
       }
       abortRef.current?.abort();
@@ -282,8 +276,10 @@ export function TutorModal({ topic, context, contentId, topicSlug, onClose }: Tu
 
       try {
         let full = '';
-        for await (const chunk of streamGenerateContent({
+        for await (const chunk of streamChat({
+          provider,
           apiKey,
+          model: tutorModel,
           systemInstruction: systemInstructionText(),
           contents,
           signal: controller.signal,
@@ -296,10 +292,10 @@ export function TutorModal({ topic, context, contentId, topicSlug, onClose }: Tu
       } catch (err) {
         if (controller.signal.aborted) return;
         const msg = err instanceof Error ? err.message : String(err);
-        dispatch({ type: 'ERROR', message: `${uiStrings.errorPrefix}: ${msg}` });
+        dispatch({ type: 'ERROR', message: `${ui.errorPrefix}: ${msg}` });
       }
     },
-    [apiKey, systemInstructionText],
+    [apiKey, provider, tutorModel, systemInstructionText],
   );
 
   // Ask for a question, then persist the result.
@@ -311,7 +307,9 @@ export function TutorModal({ topic, context, contentId, topicSlug, onClose }: Tu
       resetConversation: boolean,
     ): Promise<void> => {
       const userTurn =
-        existingHistory.length === 0 ? firstQuestionTemplate(topic) : newQuestionRequest;
+        existingHistory.length === 0
+          ? tutor.firstQuestionTemplate.replace('{{topic}}', topic)
+          : tutor.newQuestionRequest;
       const contents: ChatMessage[] = [
         ...existingHistory,
         { role: 'user', parts: [{ text: userTurn }] },
@@ -390,12 +388,12 @@ export function TutorModal({ topic, context, contentId, topicSlug, onClose }: Tu
   const submitAnswer = async (): Promise<void> => {
     const answer = answerDraft.trim();
     if (!answer) {
-      dispatch({ type: 'ERROR', message: uiStrings.errorEmptyAnswer });
+      dispatch({ type: 'ERROR', message: ui.errorEmptyAnswer });
       return;
     }
     const transientContents: ChatMessage[] = [
       ...state.chatHistory,
-      { role: 'user', parts: [{ text: `${answer}\n\n${evaluationPrompt}` }] },
+      { role: 'user', parts: [{ text: `${answer}\n\n${tutor.evaluationPrompt}` }] },
     ];
 
     // Capture pre-dispatch state for persist.
@@ -428,7 +426,7 @@ export function TutorModal({ topic, context, contentId, topicSlug, onClose }: Tu
   const sendFollowUp = async (): Promise<void> => {
     const q = followUpDraft.trim();
     if (!q) {
-      dispatch({ type: 'ERROR', message: uiStrings.errorEmptyFollowUp });
+      dispatch({ type: 'ERROR', message: ui.errorEmptyFollowUp });
       return;
     }
     dispatch({ type: 'FOLLOW_UP_SENT', text: q });
@@ -465,7 +463,7 @@ export function TutorModal({ topic, context, contentId, topicSlug, onClose }: Tu
   };
 
   const clearHistory = () => {
-    if (!window.confirm(uiStrings.confirmClearHistory)) return;
+    if (!window.confirm(ui.confirmClearHistory)) return;
     abortRef.current?.abort();
     dispatch({ type: 'CLEAR_HISTORY' });
     updatedAtRef.current = null;
@@ -523,7 +521,7 @@ export function TutorModal({ topic, context, contentId, topicSlug, onClose }: Tu
       <div className="max-h-[90vh] w-[90%] max-w-[36vw] overflow-hidden rounded-xl bg-white p-6 shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
         <div className="mb-5 flex items-center justify-between border-b border-surface-cardBorder pb-2">
           <h4 className="m-0 text-[16pt] font-bold text-brand">
-            {uiStrings.tutorModalTitle}: {topic}
+            {ui.tutorModalTitle}: {topic}
           </h4>
           <button
             type="button"
@@ -569,7 +567,7 @@ export function TutorModal({ topic, context, contentId, topicSlug, onClose }: Tu
                 value={answerDraft}
                 onChange={(e) => onAnswerChange(e.target.value)}
                 onKeyDown={handleAnswerKey}
-                placeholder={uiStrings.answerPlaceholder}
+                placeholder={ui.answerPlaceholder}
                 className="mb-4 block h-32 w-full resize-y rounded-lg border border-[#ccc] p-3 font-sans text-[10pt]"
               />
               <div className="flex justify-end gap-2">
@@ -578,7 +576,7 @@ export function TutorModal({ topic, context, contentId, topicSlug, onClose }: Tu
                   onClick={submitAnswer}
                   className="cursor-pointer rounded-lg border-0 bg-accent-green px-3 py-2 text-sm text-white transition-colors hover:bg-accent-greenDark"
                 >
-                  {uiStrings.submitAnswer}
+                  {ui.submitAnswer}
                 </button>
               </div>
             </>
@@ -588,7 +586,7 @@ export function TutorModal({ topic, context, contentId, topicSlug, onClose }: Tu
             <>
               <div className="mt-2 max-h-[55vh] overflow-y-auto rounded-lg border border-surface-cardBorder bg-surface-page p-4">
                 {state.conversation.map((entry, i) => (
-                  <ConversationMessage key={i} entry={entry} />
+                  <ConversationMessage key={i} entry={entry} ui={ui} />
                 ))}
               </div>
               <div className="mt-4 flex flex-wrap justify-end gap-2">
@@ -597,28 +595,28 @@ export function TutorModal({ topic, context, contentId, topicSlug, onClose }: Tu
                   onClick={newQuestion}
                   className="cursor-pointer rounded-lg border-0 bg-accent-blue px-3 py-2 text-sm text-white transition-colors hover:bg-accent-blueDark"
                 >
-                  {uiStrings.newQuestion}
+                  {ui.newQuestion}
                 </button>
                 <button
                   type="button"
                   onClick={removeLast}
                   className="cursor-pointer rounded-lg border-0 bg-[#6c757d] px-3 py-2 text-sm text-white transition-colors hover:bg-[#5a6268]"
                 >
-                  {uiStrings.removeLast}
+                  {ui.removeLast}
                 </button>
                 <button
                   type="button"
                   onClick={clearHistory}
                   className="cursor-pointer rounded-lg border-0 bg-[#dc3545] px-3 py-2 text-sm text-white transition-colors hover:bg-[#c82333]"
                 >
-                  {uiStrings.clearHistory}
+                  {ui.clearHistory}
                 </button>
               </div>
               <div className="mt-4">
                 <textarea
                   value={followUpDraft}
                   onChange={(e) => setFollowUpDraft(e.target.value)}
-                  placeholder={uiStrings.followUpPlaceholder}
+                  placeholder={ui.followUpPlaceholder}
                   className="mb-2 block h-20 w-full resize-y rounded-lg border border-[#ccc] p-3 font-sans text-[10pt]"
                 />
                 <button
@@ -626,7 +624,7 @@ export function TutorModal({ topic, context, contentId, topicSlug, onClose }: Tu
                   onClick={sendFollowUp}
                   className="cursor-pointer rounded-lg border-0 bg-[#17a2b8] px-4 py-2 font-bold text-white transition-colors hover:bg-[#138496]"
                 >
-                  {uiStrings.sendFollowUp}
+                  {ui.sendFollowUp}
                 </button>
               </div>
             </>
@@ -641,14 +639,14 @@ export function TutorModal({ topic, context, contentId, topicSlug, onClose }: Tu
 // Conversation message sub-component
 // ---------------------------------------------------------------------------
 
-function ConversationMessage({ entry }: { entry: Entry }) {
+function ConversationMessage({ entry, ui }: { entry: Entry; ui: Record<string, string> }) {
   const label = (
     {
-      question: uiStrings.labelQuestion,
-      userAnswer: uiStrings.labelYourAnswer,
-      evaluation: uiStrings.labelEvaluation,
-      userFollowUp: uiStrings.labelYourQuestion,
-      tutorAnswer: uiStrings.labelTutorAnswer,
+      question: ui.labelQuestion,
+      userAnswer: ui.labelYourAnswer,
+      evaluation: ui.labelEvaluation,
+      userFollowUp: ui.labelYourQuestion,
+      tutorAnswer: ui.labelTutorAnswer,
     } as const
   )[entry.kind];
 

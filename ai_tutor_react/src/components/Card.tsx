@@ -1,5 +1,5 @@
 import type { Card as CardType, ContentItem } from '../lib/types';
-import { uiStrings } from '../lib/tutorPrompts';
+import { useApp } from '../context/AppContext';
 import { Tooltip } from './Tooltip';
 
 interface CardProps {
@@ -16,6 +16,7 @@ function renderItem(item: ContentItem, index: number, variant: 'default' | 'extr
 }
 
 export function Card({ card, onAskTutor }: CardProps) {
+  const { locale } = useApp();
   const isExtra = card.title.extra_class === 'extra-info';
   const variant: 'default' | 'extra' = isExtra ? 'extra' : 'default';
 
@@ -50,7 +51,7 @@ export function Card({ card, onAskTutor }: CardProps) {
           onClick={() => onAskTutor(card)}
           className="cursor-pointer rounded-lg border border-accent-blue bg-transparent px-3 py-1.5 text-[9.5pt] font-medium text-accent-blue transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent-blue hover:text-white hover:shadow-[0_4px_8px_rgba(0,123,255,0.2)]"
         >
-          {uiStrings.askTutor}
+          {locale.ui.askTutor}
         </button>
       </div>
     </div>

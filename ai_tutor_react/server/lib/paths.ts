@@ -8,3 +8,4 @@ const ROOT = resolve(__dirname, '..', '..');
 
 export const CONTENT_DIR = resolve(ROOT, 'content');
 export const HISTORIES_DIR = resolve(ROOT, 'histories');
+export const PROMPTS_DIR = resolve(ROOT, 'prompts');

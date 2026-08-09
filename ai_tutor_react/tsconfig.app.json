@@ -20,5 +20,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "content/**/*.json"]
+  "include": ["src", "content/**/*.json", "locales/**/*.json"]
 }

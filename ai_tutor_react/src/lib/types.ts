@@ -20,6 +20,8 @@ export interface ContentFile {
   cards: Card[];
 }
 
+export type Provider = 'google' | 'openrouter';
+
 export type ChatRole = 'user' | 'model';
 
 export interface ChatMessage {
