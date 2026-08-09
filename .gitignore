@@ -1,0 +1,8 @@
+# local AI-assistant config
+CLAUDE.md
+
+# build artifacts
+node_modules/
+dist/
+*.tsbuildinfo
+*.log
