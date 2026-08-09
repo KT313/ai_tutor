@@ -4,19 +4,22 @@ Turn lecture notes into an interactive, AI-powered exam-prep site.
 
 Study material renders as a grid of topic cards with hover definitions. Each topic has a built-in AI tutor that asks exam-style questions, grades your answers with structured feedback, and keeps a per-topic chat that survives reloads.
 
-<!-- ![AI Tutor screenshot](docs/screenshot.png) -->
+![Topic cards generated from lecture PDFs](docs/card-grid.png)
 
 ## Features
 
 - **Three-layer content:** each card item has a short visible label, a hover definition, and hidden extra context passed only to the LLM — a scannable cheat sheet on the surface, full lecture context underneath.
 - **Tutor loop:** question → your answer → structured correction → next question, with free-form follow-ups. Responses stream in live.
-- **Bring your own subject:** upload your lecture PDFs in the app and it generates the study content for you. Switch between generated content sets with the built-in picker.
-- **Multi-language UI** (German, English, Japanese, Korean) and **two LLM providers** (Gemini or OpenRouter).
+- **Bring your own subject:** upload your lecture PDFs in the app and it generates the study content for you. Switch between content sets with the built-in picker.
+- **Multi-language UI** (German, English, Japanese, Korean) and **two LLM providers** (Gemini or OpenRouter) with selectable tutor model.
 
-## Repo layout
+| Tutor session | Generate content from PDFs | Settings |
+|---|---|---|
+| ![Tutor modal with question, answer and evaluation](docs/tutor-modal.png) | ![Content selection with PDF generation form](docs/content-selection.png) | ![Provider, API key and model settings](docs/settings.png) |
 
-- `ai_tutor_react/` — the main app: React 18 + TypeScript + Vite + Tailwind, with a small Hono (Node) API for file-based persistence and server-side content generation.
-- `german_og/`, `korean/` — the original versions: one self-contained `site.html` each (German / Korean), zero dependencies, no build step, with a manual prompt-based content workflow.
+## Stack
+
+React 18 + TypeScript + Vite + Tailwind on the client; a small Hono (Node) API for file-based persistence and server-side content generation.
 
 ## Quick start
 
@@ -28,7 +31,7 @@ npm install
 npm run dev   # client on :5173, persistence server on :5174
 ```
 
-Open http://localhost:5173 and paste your API key. Or, for the single-file version, just open `german_og/site.html` or `korean/site.html` in a browser.
+Open http://localhost:5173 and paste your API key in the settings.
 
 The key is stored only in your browser's `localStorage`; requests go directly to the LLM provider.
 
