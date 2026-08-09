@@ -11,9 +11,9 @@ Paste a free [Gemini API key](https://aistudio.google.com/apikey) (or OpenRouter
 
 ## What it does
 
-- **Automatic multi-step information extraction from PDF(s):** upload lecture slides and it generates an interactive study site — topic cards with hover definitions plus hidden extra context that only the LLM sees.
-- **Tutoring loop:** a per-topic AI tutor asks exam-style questions, grades your answers with structured corrections, and streams responses live.
-- **Language switching and provider selection:** UI in German, English, Japanese or Korean; Gemini or OpenRouter as backend with selectable tutor model.
+- **Automatic multi-step information extraction from PDF(s):** information gets extracted from uploaded pdfs into structured format, automatically added to the available study topics
+- **Tutoring loop:** a per-topic AI tutor asks exam-style questions, grades your answers with structured corrections
+- **Language switching and provider selection:** UI in German, English, Japanese or Korean; Gemini or OpenRouter as backend with selectable tutor model
 
 ![Topic cards generated from lecture PDFs](docs/card-grid.png)
 
